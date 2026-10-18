@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="CK 3D Tasarım: 3D modelleme, baskı ve özel tasarım çalışmaları.">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>CK 3D Tasarım 0.5</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: sticky slim bar, asymmetric hero with floating print-layer stack, 4-col works grid, split contact. */
+:root{
+  --bg:#ECEEF0; --card:#F6F7F8; --fg:#121417; --mut:#5A626A; --line:#D2D6DA; --acc:#3B4CF0; --acc-ink:#fff;
+  --f-display:'Unbounded','Trebuchet MS',sans-serif; --f-body:'Manrope','Segoe UI',sans-serif; --f-mono:'JetBrains Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101216;--card:#171A1F;--fg:#ECEEF0;--mut:#98A0A8;--line:#262B31;--acc:#8E9BFF;--acc-ink:#101216;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101216;--card:#171A1F;--fg:#ECEEF0;--mut:#98A0A8;--line:#262B31;--acc:#8E9BFF;--acc-ink:#101216;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.wrap{max-width:1180px;margin:0 auto}
+.mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+
+/* intro curtain (fades itself out) */
+.curtain{position:fixed;inset:0;background:var(--fg);z-index:100;display:grid;place-items:center;pointer-events:none;animation:curtain 1.1s var(--ease) .5s forwards}
+.curtain span{font-family:var(--f-display);color:var(--bg);font-size:14px;letter-spacing:.3em;animation:fadeUp .6s var(--ease) both}
+@keyframes curtain{to{clip-path:inset(0 0 100% 0);visibility:hidden}}
+.curtain{clip-path:inset(0)}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1180px;margin:0 auto}
+.logo{font-family:var(--f-display);font-weight:500;font-size:15px;letter-spacing:.02em;display:flex;align-items:baseline;gap:8px}
+.logo sup{font-family:var(--f-mono);font-size:10px;color:var(--acc);letter-spacing:.05em}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav a{padding:6px 12px;border-radius:99px;font-size:14px;color:var(--mut);position:relative;transition:color .25s,background .25s}
+nav a:hover,nav a.on{color:var(--fg);background:var(--card)}
+.theme{border:1px solid var(--line);background:none;border-radius:99px;width:34px;height:34px;display:grid;place-items:center;transition:transform .4s var(--ease),border-color .2s}
+.theme:hover{transform:rotate(90deg);border-color:var(--acc)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:32px;align-items:center;padding-block:72px 56px}
+.hero h1{font-family:var(--f-display);font-weight:300;font-size:clamp(34px,6vw,68px);line-height:1.05;letter-spacing:-.02em;margin:14px 0 20px;text-wrap:balance}
+.hero h1 b{font-weight:500;color:var(--acc)}
+.hero p{max-width:46ch;color:var(--mut);margin:0 0 28px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:99px;border:1px solid var(--fg);background:none;font-weight:600;font-size:14px;position:relative;overflow:hidden;transition:color .35s var(--ease),transform .2s;will-change:transform}
+.btn::before{content:"";position:absolute;inset:0;background:var(--fg);transform:translateY(101%);transition:transform .4s var(--ease);z-index:-1}
+.btn{isolation:isolate}
+.btn:hover{color:var(--bg)}
+.btn:hover::before{transform:none}
+.btn.fill{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.fill::before{background:var(--fg)}
+.btn.fill:hover{color:var(--bg)}
+.stack{aspect-ratio:1;max-width:100%;position:relative;perspective:900px}
+.stack svg{width:100%;height:100%;overflow:visible}
+.layer{transform-origin:center;animation:float 6s ease-in-out infinite}
+.layer:nth-child(2){animation-delay:-1s}.layer:nth-child(3){animation-delay:-2s}.layer:nth-child(4){animation-delay:-3s}.layer:nth-child(5){animation-delay:-4s}
+@keyframes float{50%{transform:translateY(-10px)}}
+.in{animation:fadeUp .9s var(--ease) both}
+.d1{animation-delay:.9s}.d2{animation-delay:1.05s}.d3{animation-delay:1.2s}.d4{animation-delay:1.35s}
+@keyframes fadeUp{from{opacity:.001;transform:translateY(22px)}to{opacity:1;transform:none}}
+
+/* ticker */
+.ticker{border-block:1px solid var(--line);overflow:hidden;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)))}
+.ticker div{display:flex;gap:40px;width:max-content;padding:14px 0;animation:tick 28s linear infinite}
+.ticker:hover div{animation-play-state:paused}
+@keyframes tick{to{transform:translateX(-50%)}}
+
+/* sections */
+section{padding-block:88px 0}
+.head{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin-bottom:32px}
+h2{font-family:var(--f-display);font-weight:300;font-size:clamp(26px,4vw,42px);letter-spacing:-.02em;margin:8px 0 0;line-height:1.1}
+.rv{animation:fadeUp .8s var(--ease) both;animation-play-state:paused}
+.rv.show{animation-play-state:running}
+
+/* works */
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;border-radius:99px;padding:7px 16px;font-size:13px;color:var(--mut);transition:all .25s var(--ease)}
+.chip:hover{border-color:var(--fg);color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.work{position:relative;aspect-ratio:9/15;min-width:0;border:1px solid var(--line);background:var(--card);border-radius:6px;overflow:hidden;padding:0;text-align:left;display:block;transform-style:preserve-3d;transition:transform .25s ease-out,border-color .3s,opacity .4s,box-shadow .3s;animation:fadeUp .7s var(--ease) both}
+.work:hover{border-color:var(--acc);box-shadow:0 18px 40px -22px var(--acc)}
+.work.hide{display:none}
+.work .art{position:absolute;inset:0;display:block;transition:transform .7s var(--ease)}
+.work:hover .art{transform:scale(1.08) translateY(-4px)}
+.work .art video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:var(--card)}
+.work .meta{position:absolute;left:0;right:0;bottom:0;padding:14px;display:flex;justify-content:space-between;gap:8px;align-items:end;background:linear-gradient(transparent,color-mix(in srgb,var(--card) 92%,transparent) 55%)}
+.work h3{margin:0;font-size:14px;font-weight:600}
+.work .tag{position:absolute;top:12px;left:12px;background:color-mix(in srgb,var(--bg) 78%,transparent);color:var(--fg);padding:3px 10px;border-radius:99px;backdrop-filter:blur(6px)}
+.work .arrow{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;transition:all .3s var(--ease);flex:none}
+.work:hover .arrow{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);transform:rotate(-45deg)}
+.note{margin-top:20px;padding:14px 16px;border:1px dashed var(--line);border-radius:6px;color:var(--mut);font-size:14px}
+
+/* about */
+.about{display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.about p{margin:0 0 16px;color:var(--mut);max-width:52ch}
+.steps{display:grid;gap:0;border-top:1px solid var(--line)}
+.step{display:flex;justify-content:space-between;gap:16px;padding:18px 4px;border-bottom:1px solid var(--line);transition:padding .35s var(--ease),color .3s}
+.step:hover{padding-left:16px;color:var(--acc)}
+.step span:last-child{color:var(--mut);font-size:14px;text-align:right}
+
+/* contact */
+.contact{border:1px solid var(--line);border-radius:6px;background:var(--card);padding:clamp(24px,5vw,56px);display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}
+.contact h2{margin-bottom:12px}
+.rows{display:grid;gap:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border:1px solid var(--line);border-radius:6px;background:var(--bg);transition:border-color .25s,transform .3s var(--ease)}
+.row:hover{border-color:var(--acc);transform:translateX(6px)}
+.row .who{display:flex;flex-direction:column;min-width:0}
+.row .who b{font-weight:600;overflow-wrap:anywhere}
+.mini{border:1px solid var(--line);background:none;border-radius:99px;padding:6px 14px;font-size:13px;transition:all .25s}
+.mini:hover{background:var(--fg);color:var(--bg)}
+footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:40px 32px;margin-top:88px;border-top:1px solid var(--line)}
+
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);display:grid;place-items:center;padding:20px;opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+.lb.open{opacity:1;visibility:visible}
+.lb .box{width:min(860px,100%);max-height:100%;overflow:auto;display:grid;grid-template-columns:1.2fr .8fr;border:1px solid var(--line);border-radius:6px;background:var(--card);transform:translateY(24px) scale(.97);transition:transform .5s var(--ease)}
+.lb.open .box{transform:none}
+.lb .pic{display:grid;place-items:center;padding:24px;background:var(--bg);min-width:0}
+.lb .pic video{width:min(340px,100%);max-height:78vh;border-radius:4px;display:block;background:#000}
+.lb .txt{padding:28px;display:flex;flex-direction:column;gap:12px;justify-content:space-between;min-width:0}
+.lb h3{font-family:var(--f-display);font-weight:300;font-size:24px;margin:6px 0}
+.lb .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* custom cursor */
+.cur,.ring{position:fixed;left:0;top:0;pointer-events:none;z-index:200;display:none}
+@media (hover:hover) and (pointer:fine){
+  .cur,.ring{display:block}
+  .cur{width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--acc)}
+  .ring{width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;border:1px solid var(--fg);display:grid;place-items:center;font-size:10px;font-family:var(--f-mono);letter-spacing:.08em;color:transparent;transition:width .3s var(--ease),height .3s var(--ease),margin .3s var(--ease),background .3s,border-color .3s,color .2s;mix-blend-mode:normal}
+  .ring.link{width:60px;height:60px;margin:-30px 0 0 -30px;border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)}
+  .ring.view{width:76px;height:76px;margin:-38px 0 0 -38px;background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+  body.cursor-on, body.cursor-on a, body.cursor-on button{cursor:none}
+}
+
+@media (max-width:900px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .hero,.about,.contact{grid-template-columns:1fr}
+  .stack{max-width:340px}
+  .lb .box{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  nav a{padding:6px 8px;font-size:13px}
+  .logo{font-size:13px}
+  .grid{gap:10px}
+  section{padding-block:64px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+}
+</style>
+
+</head>
+<body>
+<div class="curtain" aria-hidden="true"><span>CK 3D</span></div>
+<div class="cur" id="cur"></div><div class="ring" id="ring"></div>
+
+<header>
+  <div class="bar">
+    <a href="#top" class="logo" aria-label="CK 3D Tasarım ana sayfa">CK 3D Tasarım <sup>v0.5</sup></a>
+    <nav aria-label="Ana menü">
+      <a href="#eserler" data-s="eserler">Eserler</a>
+      <a href="#hakkinda" data-s="hakkinda">Hakkında</a>
+      <a href="#iletisim" data-s="iletisim">İletişim</a>
+    </nav>
+    <button class="theme" id="theme" aria-label="Tema değiştir" title="Tema değiştir">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap" id="top">
+  <div class="hero">
+    <div>
+      <div class="mono in d1">3D modelleme · baskı · tasarım</div>
+      <h1 class="in d2">Fikri katman katman <b>nesneye</b> çeviriyoruz.</h1>
+      <p class="in d3">CK 3D Tasarım, hayal edilen parçaları dijitalde modelleyip 3D baskıyla somutlaştırır. Çalışmalardan bir seçki aşağıda.</p>
+      <div class="cta in d4">
+        <a class="btn fill" href="#eserler" data-go="eserler">Eserleri gör</a>
+        <a class="btn" href="https://www.instagram.com/_ck3dtasarim_/" target="_blank" rel="noopener">Instagram'da takip et ↗</a>
+      </div>
+    </div>
+    <div class="stack in d2" id="stack" aria-hidden="true">
+      <svg viewBox="0 0 300 300">
+        <g class="layer"><polygon points="150,200 250,150 150,100 50,150" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity=".35"/></g>
+        <g class="layer"><polygon points="150,180 240,135 150,90 60,135" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity=".5"/></g>
+        <g class="layer"><polygon points="150,160 230,120 150,80 70,120" fill="none" stroke="var(--fg)" stroke-width="1.2" opacity=".7"/></g>
+        <g class="layer"><polygon points="150,140 220,105 150,70 80,105" fill="var(--card)" stroke="var(--fg)" stroke-width="1.2"/></g>
+        <g class="layer"><polygon points="150,120 210,90 150,60 90,90" fill="var(--acc)" stroke="var(--acc)" stroke-width="1.2"/></g>
+      </svg>
+    </div>
+  </div>
+</main>
+
+<div class="ticker" aria-hidden="true">
+  <div class="mono" id="tick"></div>
+</div>
+
+<main class="wrap">
+  <section id="eserler">
+    <div class="head rv">
+      <div><span class="mono">Seçki</span><h2>Eserler</h2></div>
+      <div class="filters" id="filters" role="group" aria-label="Kategori filtresi"></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="note rv">Daha fazla çalışma için <a href="https://www.instagram.com/_ck3dtasarim_/" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:underline">Instagram</a> hesabına göz at.</p>
+  </section>
+
+  <section id="hakkinda">
+    <div class="about">
+      <div class="rv">
+        <span class="mono">Hakkında</span>
+        <h2 style="margin-bottom:20px">Tasarımdan baskıya tek elden.</h2>
+        <p>Her iş bir fikirle ve bir ölçüyle başlar. Parça dijitalde modellenir, katman katman basılır ve elde tutulacak hale getirilir.</p>
+        <p>Figürden aksesuara, prototipten dekora kadar farklı işler üzerinde çalışıyoruz.</p>
+      </div>
+      <div class="steps rv">
+        <div class="step"><span>Fikir</span><span>Ne istediğini anlat</span></div>
+        <div class="step"><span>Model</span><span>3D dijital tasarım</span></div>
+        <div class="step"><span>Baskı</span><span>Katman katman üretim</span></div>
+        <div class="step"><span>Teslim</span><span>Temizlik ve son rötuş</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="iletisim">
+    <div class="contact rv">
+      <div>
+        <span class="mono">İletişim</span>
+        <h2>Bir parça mı düşünüyorsun?</h2>
+        <p style="color:var(--mut);margin:0 0 20px;max-width:40ch">Fikrini Instagram üzerinden mesaj olarak gönder, birlikte netleştirelim.</p>
+        <a class="btn fill" href="https://www.instagram.com/_ck3dtasarim_/" target="_blank" rel="noopener">Instagram'a git ↗</a>
+      </div>
+      <div class="rows">
+        <div class="row">
+          <div class="who"><span class="mono">Instagram</span><b>@_ck3dtasarim_</b></div>
+          <button class="mini" id="copy">Kopyala</button>
+        </div>
+        <a class="row" href="https://www.instagram.com/_ck3dtasarim_/" target="_blank" rel="noopener">
+          <div class="who"><span class="mono">Profil bağlantısı</span><b>instagram.com/_ck3dtasarim_</b></div><span>↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="mono">© CK 3D Tasarım · v0.5</span>
+    <a class="mono" href="#top">Yukarı çık ↑</a>
+  </footer>
+</main>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Eser detayı">
+  <div class="box">
+    <div class="pic" id="lbPic"></div>
+    <div class="txt">
+      <div>
+        <span class="mono" id="lbTag"></span>
+        <h3 id="lbTitle"></h3>
+        <p style="color:var(--mut);margin:0;font-size:14px" id="lbDesc"></p>
+      </div>
+      <div class="acts">
+        <button class="mini" id="prev">← Önceki</button>
+        <button class="mini" id="next">Sonraki →</button>
+        <button class="mini" id="close">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var WORKS=[
+    {t:'Iron Man, boyama aşaması',c:'Figür',d:'Elle boyanan 3D baskı figür.',f:'v01'},
+    {t:'Yoda, hazırlık aşaması',c:'Figür',d:'Boyaya hazırlanan Yoda figürü.',f:'v02'},
+    {t:'Iron Man, tamamlandı',c:'Figür',d:'Boyaması biten figür, alıcısına hayırlı olsun.',f:'v03'},
+    {t:'Groot Saksı',c:'Saksı',d:'Groot figürlü, elle boyanmış saksı.',f:'v04'},
+    {t:'Eyfel Kulesi Abajur',c:'Dekor',d:'Eyfel Kulesi formunda abajur.',f:'v05'},
+    {t:'Yoda Saksı',c:'Saksı',d:'Yoda figürlü saksı. Sahibini buldu.',f:'v06'},
+    {t:'Ahtapot Kolu Standı',c:'Ürün',d:'Ahtapot kolu şeklinde telefon standı.',f:'v07'},
+    {t:'Ayasofya',c:'Dekor',d:'Ayasofya maketi.',f:'v08'}
+  ];
+  var CATS=['Tümü','Figür','Saksı','Dekor','Ürün'];
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var grid=document.getElementById('grid'),filters=document.getElementById('filters'),cur=0,cat='Tümü';
+  WORKS.forEach(function(w,i){
+    var b=document.createElement('button');
+    b.className='work';b.type='button';b.dataset.c=w.c;b.dataset.i=i;b.style.animationDelay=(i*70)+'ms';
+    b.setAttribute('aria-label',w.t+', '+w.c+' detayını aç');
+    b.innerHTML='<span class="art"><video muted loop playsinline preload="auto" poster="media/'+w.f+'.jpg" src="media/'+w.f+'.mp4" aria-hidden="true" tabindex="-1"></video></span><span class="tag mono">'+w.c+'</span><span class="meta"><h3>'+w.t+'</h3><span class="arrow" aria-hidden="true">→</span></span>';
+    b.addEventListener('click',function(){openLb(i)});
+    grid.appendChild(b);
+  });
+  CATS.forEach(function(c){
+    var b=document.createElement('button');b.className='chip';b.type='button';b.textContent=c;b.setAttribute('aria-pressed',c==='Tümü');
+    b.addEventListener('click',function(){
+      cat=c;
+      [].forEach.call(filters.children,function(x){x.setAttribute('aria-pressed',x===b)});
+      [].forEach.call(grid.children,function(el,i){
+        var show=c==='Tümü'||el.dataset.c===c;
+        el.classList.toggle('hide',!show);
+        var vv=el.querySelector('video');if(vv){if(show){if(!reduce){var pr=vv.play();if(pr&&pr.catch)pr.catch(function(){})}}else{vv.pause()}}
+        if(show){el.style.animation='none';el.offsetHeight;el.style.animation='';el.style.animationDelay=(i*50)+'ms'}
+      });
+    });
+    filters.appendChild(b);
+  });
+
+  // tüm videolar aynı anda sessiz ve döngüde oynar
+  function playAll(){
+    if(reduce)return;
+    [].forEach.call(grid.querySelectorAll('.work:not(.hide) video'),function(v){v.muted=true;var p=v.play();if(p&&p.catch)p.catch(function(){})});
+  }
+  playAll();
+  ['pointerdown','keydown','touchstart','scroll'].forEach(function(ev){
+    var h=function(){playAll();removeEventListener(ev,h)};
+    addEventListener(ev,h,{passive:true});
+  });
+
+  // ticker
+  var words=['3D MODELLEME','3D BASKI','PROTOTİP','FİGÜR','DEKOR','ÖZEL TASARIM'];
+  var t='';for(var r=0;r<4;r++){words.forEach(function(w){t+='<span>'+w+' &nbsp;/</span>'})}
+  document.getElementById('tick').innerHTML=t;
+
+  // lightbox
+  var lb=document.getElementById('lb');
+  function visible(){return [].filter.call(grid.children,function(e){return !e.classList.contains('hide')}).map(function(e){return +e.dataset.i})}
+  function fill(i){var w=WORKS[i];cur=i;
+    var pic=document.getElementById('lbPic');pic.innerHTML='';
+    var lv=document.createElement('video');lv.src='media/'+w.f+'.mp4';lv.poster='media/'+w.f+'.jpg';lv.controls=true;lv.loop=true;lv.playsInline=true;lv.setAttribute('playsinline','');pic.appendChild(lv);
+    var pp=lv.play();if(pp&&pp.catch)pp.catch(function(){lv.muted=true;var p2=lv.play();if(p2&&p2.catch)p2.catch(function(){})});
+    document.getElementById('lbTag').textContent=w.c;
+    document.getElementById('lbTitle').textContent=w.t;
+    document.getElementById('lbDesc').textContent=w.d;}
+  function openLb(i){fill(i);lb.classList.add('open');document.getElementById('close').focus()}
+  function closeLb(){lb.classList.remove('open');var lv=lb.querySelector('video');if(lv){lv.pause();lv.removeAttribute('src');lv.load()}}
+  function step(d){var v=visible();var p=v.indexOf(cur);fill(v[(p+d+v.length)%v.length])}
+  document.getElementById('close').onclick=closeLb;
+  document.getElementById('prev').onclick=function(){step(-1)};
+  document.getElementById('next').onclick=function(){step(1)};
+  lb.addEventListener('click',function(e){if(e.target===lb)closeLb()});
+  document.addEventListener('keydown',function(e){
+    if(!lb.classList.contains('open'))return;
+    if(e.key==='Escape')closeLb();
+    if(e.key==='ArrowLeft')step(-1);
+    if(e.key==='ArrowRight')step(1);
+  });
+
+  // copy
+  var cp=document.getElementById('copy');
+  cp.onclick=function(){
+    var txt='@_ck3dtasarim_';
+    function ok(){cp.textContent='Kopyalandı';setTimeout(function(){cp.textContent='Kopyala'},1600)}
+    function fb(){var r=document.createRange();r.selectNodeContents(cp.previousElementSibling.querySelector('b'));var s=getSelection();s.removeAllRanges();s.addRange(r);cp.textContent='Seçildi'; setTimeout(function(){cp.textContent='Kopyala'},1600)}
+    try{navigator.clipboard.writeText(txt).then(ok,fb)}catch(e){fb()}
+  };
+
+  // theme
+  var root=document.documentElement;
+  document.getElementById('theme').onclick=function(){
+    var dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme=dark?'light':'dark';
+  };
+
+  // smooth in-page nav
+  [].forEach.call(document.querySelectorAll('[data-go]'),function(a){
+    a.addEventListener('click',function(e){e.preventDefault();document.getElementById(a.dataset.go).scrollIntoView({behavior:'smooth'})});
+  });
+
+  // reveal + active nav
+  var links=document.querySelectorAll('nav a');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('show');io.unobserve(e.target)}})},{threshold:.12});
+    [].forEach.call(document.querySelectorAll('.rv'),function(el){io.observe(el)});
+    var so=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){[].forEach.call(links,function(l){l.classList.toggle('on',l.dataset.s===e.target.id)})}})},{rootMargin:'-45% 0px -50% 0px'});
+    [].forEach.call(document.querySelectorAll('section'),function(s){so.observe(s)});
+  }else{[].forEach.call(document.querySelectorAll('.rv'),function(el){el.classList.add('show')})}
+
+  // cursor, magnetic buttons, tilt, hero parallax
+  if(matchMedia('(hover:hover) and (pointer:fine)').matches){
+    document.body.classList.add('cursor-on');
+    var c=document.getElementById('cur'),rg=document.getElementById('ring'),mx=0,my=0,rx=0,ry=0;
+    addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;c.style.transform='translate('+mx+'px,'+my+'px)'});
+    (function loop(){rx+=(mx-rx)*.18;ry+=(my-ry)*.18;rg.style.transform='translate('+rx+'px,'+ry+'px)';requestAnimationFrame(loop)})();
+    document.addEventListener('mouseover',function(e){
+      var w=e.target.closest('.work'),l=e.target.closest('a,button,.row');
+      rg.classList.toggle('view',!!w);
+      rg.classList.toggle('link',!w&&!!l);
+      rg.textContent=w?'GÖR':'';
+    });
+    [].forEach.call(document.querySelectorAll('.btn,.theme'),function(b){
+      b.addEventListener('mousemove',function(e){var r=b.getBoundingClientRect();b.style.transform='translate('+((e.clientX-r.left-r.width/2)*.18)+'px,'+((e.clientY-r.top-r.height/2)*.28)+'px)'});
+      b.addEventListener('mouseleave',function(){b.style.transform=''});
+    });
+    grid.addEventListener('mousemove',function(e){
+      var w=e.target.closest('.work');if(!w)return;var r=w.getBoundingClientRect();
+      var px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;
+      w.style.transform='perspective(700px) rotateY('+(px*8)+'deg) rotateX('+(-py*8)+'deg)';
+    });
+    grid.addEventListener('mouseout',function(e){var w=e.target.closest('.work');if(w)w.style.transform=''});
+    var st=document.getElementById('stack');
+    addEventListener('mousemove',function(e){
+      var x=(e.clientX/innerWidth-.5),y=(e.clientY/innerHeight-.5);
+      st.style.transform='rotateY('+(x*16)+'deg) rotateX('+(-y*12)+'deg)';
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
